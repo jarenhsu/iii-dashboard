@@ -163,6 +163,13 @@
   .dept-bar { height: 12px; border-radius: 6px; background: var(--leaf); overflow: hidden; }
   .dept-bar span { display: block; height: 100%; }
   .dept-row b { text-align: right; font-variant-numeric: tabular-nums; }
+  .month-h { margin-top: 1.4rem; }
+  .month-bars { display: flex; align-items: flex-end; gap: 0.5rem; height: 120px; }
+  .month-bar { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; min-width: 0; }
+  .mb-num { font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .mb-col { flex: 1; width: 100%; max-width: 34px; display: flex; align-items: flex-end; }
+  .mb-col span { display: block; width: 100%; background: var(--moss); border-radius: 4px 4px 0 0; min-height: 2px; }
+  .mb-label { font-size: 0.8rem; color: var(--ink); margin-top: 0.2rem; }
   .more-link { display: inline-block; margin-top: 1rem; font-size: 0.9rem; font-weight: 700; color: var(--moss); }
 
   footer { font-size: 0.8rem; color: var(--muted); text-align: center; padding: 0 1rem 2rem; }
@@ -210,8 +217,8 @@
   </div>
 
   <section class="report" aria-labelledby="report-h">
-    <h2 id="report-h">新聞露出月報</h2>
-    <p class="section-note" id="report-note">最新一期月報</p>
+    <h2 id="report-h">年度新聞露出</h2>
+    <p class="section-note" id="report-note">今年累計</p>
     <div class="panel" id="report"><p class="state">載入中</p></div>
   </section>
 </main>
@@ -566,43 +573,74 @@ async function loadSocial() {
 }
 
 // ============================================================
-// 區塊四：新聞露出月報（iii-newsroom 最新月份）
+// 區塊四：新聞露出年度總覽（彙整 iii-newsroom 當年度所有月份）
 // ============================================================
 async function loadReport() {
   const box = document.getElementById('report');
   try {
     const manifest = JSON.parse(await fetchText(SOURCES.newsroomBase + 'manifest.json'));
-    const month = (manifest.months || []).slice().sort().pop();
-    if (!month) throw new Error('月報清單是空的');
-    const d = JSON.parse(await fetchText(`${SOURCES.newsroomBase}${month}.json`));
-    document.getElementById('report-note').textContent = `${d.monthLabel || month}，資料來自 iii-newsroom`;
+    const allMonths = (manifest.months || []).slice().sort();
+    if (allMonths.length === 0) throw new Error('月報清單是空的');
+    const year = allMonths[allMonths.length - 1].slice(0, 4);   // 以最新月份所在年度為準
+    const months = allMonths.filter(m => m.startsWith(year));
+    const data = await Promise.all(months.map(async m => JSON.parse(await fetchText(`${SOURCES.newsroomBase}${m}.json`))));
 
-    const total = d.total || 0;
+    // 彙整
+    let total = 0, positive = 0, neutral = 0, negative = 0;
+    const mediaMap = new Map();
+    const deptMap = new Map();
+    const monthly = [];
+    data.forEach((d, i) => {
+      total += d.total || 0; positive += d.positive || 0; neutral += d.neutral || 0; negative += d.negative || 0;
+      monthly.push({ month: +months[i].slice(5, 7), total: d.total || 0 });
+      (d.topMedia || []).forEach(m => mediaMap.set(m.name, (mediaMap.get(m.name) || 0) + (m.count || 0)));
+      (d.depts || []).forEach(x => {
+        const cur = deptMap.get(x.id) || { ...x, total: 0 };
+        cur.total += x.total || 0;
+        deptMap.set(x.id, cur);
+      });
+    });
+    const firstM = monthly[0].month, lastM = monthly[monthly.length - 1].month;
+    const rangeLabel = firstM === lastM ? `${year} 年 ${firstM} 月` : `${year} 年 ${firstM} 至 ${lastM} 月`;
+    document.getElementById('report-h').textContent = `${year} 年新聞露出`;
+    document.getElementById('report-note').textContent = `${rangeLabel}累計，資料來自 iii-newsroom，新增月份後會自動納入`;
+
     const senti = [
-      { label: '正面', n: d.positive || 0, color: '#4e7a55' },
-      { label: '中立', n: d.neutral || 0, color: '#a9b8ad' },
-      { label: '負面', n: d.negative || 0, color: '#b3261e' },
+      { label: '正面', n: positive, color: '#4e7a55' },
+      { label: '中立', n: neutral, color: '#a9b8ad' },
+      { label: '負面', n: negative, color: '#b3261e' },
     ];
     const pct = n => (total ? (n / total) * 100 : 0);
-    const media = (d.topMedia || []).slice(0, 5);
-    const depts = (d.depts || []).slice().sort((a, b) => b.total - a.total);
+    // topMedia 每月只列前幾名，加總後是「各月排行榜上」的累計，作為年度參考
+    const media = [...mediaMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const depts = [...deptMap.values()].sort((a, b) => b.total - a.total);
     const maxDept = Math.max(1, ...depts.map(x => x.total));
+    const maxMonth = Math.max(1, ...monthly.map(m => m.total));
 
     box.innerHTML = `<div class="report-grid">
       <div>
         <div class="report-total">${fmtNum(total)}<small>則報導</small></div>
-        <div class="senti-bar" role="img" aria-label="正面 ${senti[0].n} 則、中立 ${senti[1].n} 則、負面 ${senti[2].n} 則">
-          ${senti.map(s => `<span style="width:${pct(s.n)}%;background:${s.color}"></span>`).join('')}
+        <div class="senti-bar" role="img" aria-label="正面 ${positive} 則、中立 ${neutral} 則、負面 ${negative} 則">
+          ${senti.map(x => `<span style="width:${pct(x.n)}%;background:${x.color}"></span>`).join('')}
         </div>
         <div class="senti-legend">
-          ${senti.map(s => `<span><i class="dot" style="background:${s.color}"></i>${s.label} ${fmtNum(s.n)}</span>`).join('')}
+          ${senti.map(x => `<span><i class="dot" style="background:${x.color}"></i>${x.label} ${fmtNum(x.n)}</span>`).join('')}
+        </div>
+        <p class="sub-h month-h">每月報導則數</p>
+        <div class="month-bars" role="img" aria-label="${monthly.map(m => `${m.month} 月 ${m.total} 則`).join('、')}">
+          ${monthly.map(m => `
+            <div class="month-bar">
+              <span class="mb-num">${fmtNum(m.total)}</span>
+              <span class="mb-col"><span style="height:${(m.total / maxMonth) * 100}%"></span></span>
+              <span class="mb-label">${m.month}月</span>
+            </div>`).join('')}
         </div>
         <a class="more-link" href="${SOURCES.newsroomPage}" target="_blank" rel="noopener">開啟完整月報</a>
       </div>
       <div>
         <p class="sub-h">報導最多的媒體</p>
         <ul class="media-list">
-          ${media.map(m => `<li><span>${esc(m.name)}</span><b>${fmtNum(m.count)}</b></li>`).join('')}
+          ${media.map(([name, count]) => `<li><span>${esc(name)}</span><b>${fmtNum(count)}</b></li>`).join('')}
         </ul>
       </div>
       <div>
@@ -616,7 +654,7 @@ async function loadReport() {
       </div>
     </div>`;
   } catch (err) {
-    box.innerHTML = `<p class="state error">新聞露出月報讀取失敗：${esc(err.message)}。請確認 iii-newsroom 的 data/manifest.json 存在。</p>`;
+    box.innerHTML = `<p class="state error">新聞露出資料讀取失敗：${esc(err.message)}。請確認 iii-newsroom 的 data/manifest.json 存在。</p>`;
   }
 }
 
