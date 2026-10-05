@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>資策會媒體監測儀表板</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --forest: #1f3a2e;
+    --forest-2: #2c4f3e;
+    --moss: #4e7a55;
+    --leaf: #e7eee6;
+    --paper: #f3f5f1;
+    --ink: #1c241f;
+    --muted: #5d6b62;
+    --line: #d5ddd4;
+    --gold: #b8860b;
+    --lv-superhigh: #b3261e;
+    --lv-high: #c8640a;
+    --lv-medium: #9a7400;
+    --up: #2e7d32;
+    --down: #b3261e;
+  }
+  * { box-sizing: border-box; }
+  html { font-size: 18px; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    line-height: 1.6;
+  }
+  a { color: inherit; }
+  a:focus-visible, button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+  /* ---------- 頁首 ---------- */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    padding: 0.9rem clamp(1rem, 4vw, 2.5rem);
+    background: var(--forest); color: #fff;
+  }
+  .topbar h1 { margin: 0; font-size: 1.15rem; font-weight: 700; letter-spacing: 0.04em; white-space: nowrap; }
+  .topbar .meta { display: flex; align-items: center; gap: 0.8rem; font-size: 0.85rem; color: #c9d8cc; }
+  .topbar button {
+    font: inherit; font-size: 0.85rem; color: #fff; background: transparent;
+    border: 1px solid #6f9078; border-radius: 6px; padding: 0.3rem 0.8rem; cursor: pointer; white-space: nowrap;
+  }
+  @media (max-width: 560px) {
+    .topbar #updated { display: none; }
+    .spark { width: 110px; }
+  }
+  .topbar button:hover { background: var(--forest-2); }
+
+  /* ---------- 敏感新聞快報 ---------- */
+  .alert-band {
+    background: var(--forest-2); color: #fff;
+    padding: 1.6rem clamp(1rem, 4vw, 2.5rem) 1.4rem;
+    border-bottom: 6px solid var(--gold);
+  }
+  .alert-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.4rem 1.2rem; }
+  .alert-count { font-size: clamp(2rem, 5vw, 2.8rem); font-weight: 900; line-height: 1.1; }
+  .alert-count.calm { color: #cfe3d2; }
+  .alert-sub { font-size: 1rem; color: #c9d8cc; }
+  .alert-levels { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-left: auto; }
+  .lv-chip {
+    font-size: 0.85rem; font-weight: 700; padding: 0.15rem 0.7rem; border-radius: 999px;
+    background: rgba(255,255,255,0.12); color: #fff;
+  }
+  .lv-chip b { font-size: 1rem; margin-left: 0.3rem; }
+
+  .ticker {
+    margin-top: 1.1rem; overflow: hidden; position: relative;
+    background: rgba(0,0,0,0.18); border-radius: 8px;
+    mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent);
+  }
+  .ticker-track { display: inline-flex; gap: 2.5rem; padding: 0.85rem 0; white-space: nowrap; animation: scroll var(--dur, 60s) linear infinite; }
+  .ticker:hover .ticker-track, .ticker:focus-within .ticker-track { animation-play-state: paused; }
+  @keyframes scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  .tick-item { display: inline-flex; align-items: center; gap: 0.6rem; text-decoration: none; font-size: 1.05rem; }
+  .tick-item:hover .tick-title { text-decoration: underline; }
+  .tick-lv { font-size: 0.8rem; font-weight: 700; padding: 0.1rem 0.55rem; border-radius: 4px; color: #fff; }
+  .tick-date { font-size: 0.85rem; color: #b8cbbd; }
+  .lv-superHigh { background: var(--lv-superhigh); }
+  .lv-high { background: var(--lv-high); }
+  .lv-medium { background: var(--lv-medium); }
+
+  .alert-list { list-style: none; margin: 1rem 0 0; padding: 0; display: none; }
+  .alert-list li { padding: 0.5rem 0; border-top: 1px solid rgba(255,255,255,0.15); }
+  .alert-list a { text-decoration: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .ticker { display: none; }
+    .alert-list { display: block; }
+  }
+
+  /* ---------- 版面 ---------- */
+  main { padding: 1.8rem clamp(1rem, 4vw, 2.5rem) 3rem; max-width: 1280px; margin: 0 auto; }
+  .row { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 1.8rem; }
+  .row > section, .report-grid > div { min-width: 0; }
+  @media (max-width: 900px) { .row { grid-template-columns: minmax(0, 1fr); } }
+  section h2 {
+    font-size: 1.3rem; font-weight: 900; margin: 0 0 0.2rem; color: var(--forest);
+  }
+  .section-note { font-size: 0.85rem; color: var(--muted); margin: 0 0 1rem; }
+  .panel { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 1.3rem 1.4rem; }
+  .state { color: var(--muted); font-size: 0.95rem; padding: 1rem 0; }
+  .state.error { color: var(--lv-superhigh); }
+
+  /* ---------- 新聞熱度 ---------- */
+  .section-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+  .period-switch { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #fff; }
+  .period-btn { font: inherit; font-size: 0.85rem; padding: 0.25rem 0.8rem; border: none; background: transparent; color: var(--muted); cursor: pointer; }
+  .period-btn[aria-pressed="true"] { background: var(--forest); color: #fff; font-weight: 700; }
+  .heat-list { list-style: none; margin: 0; padding: 0; counter-reset: rank; }
+  .heat-item {
+    display: grid; grid-template-columns: 2.6rem minmax(0, 1fr) auto; gap: 0.2rem 0.9rem; align-items: start;
+    padding: 0.9rem 0; border-top: 1px solid var(--line);
+  }
+  .heat-item:first-child { border-top: none; padding-top: 0.2rem; }
+  .heat-rank { font-size: 1.6rem; font-weight: 900; color: var(--muted); line-height: 1.2; text-align: center; }
+  .heat-item:nth-child(-n+3) .heat-rank { color: var(--gold); }
+  .heat-title { font-size: 1.05rem; font-weight: 700; text-decoration: none; line-height: 1.45; }
+  .heat-title:hover { text-decoration: underline; }
+  .heat-media { grid-column: 2; font-size: 0.85rem; color: var(--muted); }
+  .heat-count { text-align: right; white-space: nowrap; }
+  .heat-count b { display: block; font-size: 1.5rem; font-weight: 900; line-height: 1.1; color: var(--forest); }
+  .heat-count span { font-size: 0.8rem; color: var(--muted); }
+
+  /* ---------- 社群月度 ---------- */
+  .social-grid { display: grid; gap: 1.2rem; }
+  .platform { border-left: 5px solid var(--moss); padding: 0.2rem 0 0.2rem 1rem; }
+  .platform.ig { border-left-color: var(--gold); }
+  .platform h3 { margin: 0 0 0.4rem; font-size: 1.05rem; color: var(--forest); }
+  .platform-main { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 0.5rem 1rem; }
+  .social-grid > * { min-width: 0; }
+  .big-num { font-size: 2.2rem; font-weight: 900; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .big-label { font-size: 0.9rem; color: var(--muted); }
+  .spark { width: 150px; height: 46px; flex-shrink: 0; }
+  .metrics { display: flex; flex-wrap: wrap; gap: 0.4rem 1.4rem; margin-top: 0.7rem; font-size: 0.9rem; }
+  .metric b { font-variant-numeric: tabular-nums; }
+  .chg { font-size: 0.8rem; font-weight: 700; margin-left: 0.25rem; white-space: nowrap; }
+  .chg.up { color: var(--up); }
+  .chg.down { color: var(--down); }
+
+  /* ---------- 新聞露出月報 ---------- */
+  .report { margin-top: 2.2rem; }
+  .report-grid { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 1.8rem; }
+  @media (max-width: 1000px) { .report-grid { grid-template-columns: minmax(0, 1fr); } }
+  .report-total { font-size: 3rem; font-weight: 900; line-height: 1; color: var(--forest); font-variant-numeric: tabular-nums; }
+  .report-total small { font-size: 1rem; font-weight: 500; color: var(--muted); margin-left: 0.3rem; }
+  .senti-bar { display: flex; height: 14px; border-radius: 7px; overflow: hidden; margin: 1rem 0 0.6rem; background: var(--line); }
+  .senti-bar span { display: block; height: 100%; }
+  .senti-legend { display: flex; flex-wrap: wrap; gap: 0.3rem 1.1rem; font-size: 0.9rem; }
+  .dot { display: inline-block; width: 0.7rem; height: 0.7rem; border-radius: 50%; margin-right: 0.35rem; vertical-align: middle; }
+  .sub-h { font-size: 0.95rem; font-weight: 700; color: var(--forest); margin: 0 0 0.6rem; }
+  .media-list { list-style: none; margin: 0; padding: 0; font-size: 0.95rem; }
+  .media-list li { display: flex; justify-content: space-between; padding: 0.35rem 0; border-top: 1px dashed var(--line); }
+  .media-list li:first-child { border-top: none; }
+  .dept-row { display: grid; grid-template-columns: 6.5rem 1fr 2.6rem; gap: 0.6rem; align-items: center; font-size: 0.9rem; margin-bottom: 0.45rem; }
+  .dept-bar { height: 12px; border-radius: 6px; background: var(--leaf); overflow: hidden; }
+  .dept-bar span { display: block; height: 100%; }
+  .dept-row b { text-align: right; font-variant-numeric: tabular-nums; }
+  .more-link { display: inline-block; margin-top: 1rem; font-size: 0.9rem; font-weight: 700; color: var(--moss); }
+
+  footer { font-size: 0.8rem; color: var(--muted); text-align: center; padding: 0 1rem 2rem; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <h1>資策會媒體監測</h1>
+  <div class="meta">
+    <span id="updated">資料載入中</span>
+    <button type="button" id="refresh">重新整理</button>
+  </div>
+</header>
+
+<section class="alert-band" aria-labelledby="alert-title">
+  <div class="alert-head">
+    <div class="alert-count" id="alert-title">載入中</div>
+    <div class="alert-sub" id="alert-sub">近 7 天的敏感新聞</div>
+    <div class="alert-levels" id="alert-levels"></div>
+  </div>
+  <div class="ticker" id="ticker" aria-hidden="true"></div>
+  <ul class="alert-list" id="alert-list"></ul>
+</section>
+
+<main>
+  <div class="row">
+    <section aria-labelledby="heat-h">
+      <div class="section-head">
+        <h2 id="heat-h">新聞熱度前五名</h2>
+        <div class="period-switch" role="group" aria-label="分析區間">
+          <button type="button" class="period-btn" data-days="7" aria-pressed="true">7 天</button>
+          <button type="button" class="period-btn" data-days="30" aria-pressed="false">30 天</button>
+        </div>
+      </div>
+      <p class="section-note" id="heat-note">過去 7 天</p>
+      <div class="panel" id="heat"><p class="state">載入中</p></div>
+    </section>
+
+    <section aria-labelledby="social-h">
+      <h2 id="social-h">社群月度表現</h2>
+      <p class="section-note" id="social-note">FB 與 IG 各自的最新月份數據</p>
+      <div class="panel" id="social"><p class="state">載入中</p></div>
+    </section>
+  </div>
+
+  <section class="report" aria-labelledby="report-h">
+    <h2 id="report-h">新聞露出月報</h2>
+    <p class="section-note" id="report-note">最新一期月報</p>
+    <div class="panel" id="report"><p class="state">載入中</p></div>
+  </section>
+</main>
+
+<footer>資料來源：n8n 敏感新聞監測、新聞熱度觀測、社群數據、iii-newsroom。每 10 分鐘自動更新。</footer>
+
+<script>
+// ============================================================
+// 資料來源設定
+// ============================================================
+const SOURCES = {
+  sensitive: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ244BWCxM4cZAFYCX-HQvlKlr11c8U6weArg_cvg3vgyLar4eTsAokLYPrT6Dptz1xfC1T8iLuKiBt/pub?gid=0&single=true&output=csv',
+  heat: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQcN9ArvYVR01tP5qwtFieAtS16o2-_d2Rv6tqBJCvpfb1sVCJXi6D_xecn06MK1vBDVRKEr5c4g88I/pub?gid=0&single=true&output=csv',
+  social: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQtWeKJOOWHM44KvgkQl_dBRbG6pFl8RzC4BWKlOF90rCTcbOsOKBgzw_744YljOTr-IN5ZHeNgI7zS/pub?gid=0&single=true&output=csv',
+  newsroomBase: 'https://raw.githubusercontent.com/jarenhsu/iii-newsroom/main/data/',
+  newsroomPage: 'https://jarenhsu.github.io/iii-newsroom/',
+};
+const SENSITIVE_DAYS = 7;
+// 新聞熱度：與 news-monitor-iii（Streamlit）相同的規則
+const HEAT_PERIODS = { 7: '過去 7 天', 30: '過去 30 天' };
+let heatDays = 7;
+const HEAT_BLOCKED_SOURCES = ['find.org.tw', '104.com.tw', 'yes123.com.tw', 'jobsdb.com', 'cake.me', 'linkedin.com'];
+const HEAT_KEY_COMBINATIONS = [
+  ['奇美', '資策會'], ['奇美', '醫療AI'], ['奇美', '職能護照'], ['奇美', 'AI人才'], ['奇美', '醫療'],
+  ['高虹安', '論文'], ['高虹安', '抄襲'], ['高虹安', '資策會'], ['高虹安', '期刊'],
+  ['ITS', '資策會'], ['數位轉型', '資策會'], ['職能護照', '醫療'],
+];
+const HEAT_SIMILARITY = 0.3;
+const REFRESH_MS = 10 * 60 * 1000;
+
+const LEVELS = {
+  '超高敏感': { key: 'superHigh', rank: 0 },
+  '高敏感': { key: 'high', rank: 1 },
+  '中敏感': { key: 'medium', rank: 2 },
+};
+
+// ============================================================
+// 工具
+// ============================================================
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function safeUrl(u) {
+  return /^https?:\/\//i.test(u || '') ? esc(u) : '#';
+}
+function fmtNum(n) {
+  return Number.isFinite(n) ? n.toLocaleString('zh-TW') : '–';
+}
+
+// 可處理引號、逗號、換行的 CSV 解析
+function parseCSV(text) {
+  const rows = []; let row = []; let field = ''; let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; } else { inQuotes = false; }
+      } else { field += c; }
+    } else if (c === '"') { inQuotes = true; }
+    else if (c === ',') { row.push(field); field = ''; }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i + 1] === '\n') i++;
+      row.push(field); rows.push(row); row = []; field = '';
+    } else { field += c; }
+  }
+  if (field !== '' || row.length) { row.push(field); rows.push(row); }
+  const [header, ...body] = rows.filter(r => r.some(v => v.trim() !== ''));
+  if (!header) return [];
+  const keys = header.map(h => h.trim());
+  return body.map(r => Object.fromEntries(keys.map((k, i) => [k, (r[i] ?? '').trim()])));
+}
+
+async function fetchText(url) {
+  const sep = url.includes('?') ? '&' : '?';
+  const res = await fetch(`${url}${sep}_=${Date.now()}`, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`伺服器回應 ${res.status}`);
+  return res.text();
+}
+
+// 敏感新聞的日期時間：「2026/10/05」+「16:42」或「下午 4:30:00」
+function parseSheetDateTime(dateStr, timeStr) {
+  const d = (dateStr || '').match(/(\d{4})\D(\d{1,2})\D(\d{1,2})/);
+  if (!d) return null;
+  let h = 0, m = 0;
+  const t = (timeStr || '').match(/(\d{1,2}):(\d{2})/);
+  if (t) {
+    h = +t[1]; m = +t[2];
+    if (/下午|PM/i.test(timeStr) && h < 12) h += 12;
+    if (/上午|AM/i.test(timeStr) && h === 12) h = 0;
+  }
+  return new Date(+d[1], +d[2] - 1, +d[3], h, m);
+}
+function fmtMD(date) {
+  return date ? `${date.getMonth() + 1}/${date.getDate()}` : '';
+}
+
+// ============================================================
+// 區塊一：敏感新聞快報
+// ============================================================
+async function loadSensitive() {
+  const titleEl = document.getElementById('alert-title');
+  const subEl = document.getElementById('alert-sub');
+  const levelsEl = document.getElementById('alert-levels');
+  const ticker = document.getElementById('ticker');
+  const list = document.getElementById('alert-list');
+  try {
+    const rows = parseCSV(await fetchText(SOURCES.sensitive));
+    const since = Date.now() - SENSITIVE_DAYS * 86400000;
+    const items = rows
+      .map(r => ({ ...r, when: parseSheetDateTime(r['日期'], r['時間']), level: LEVELS[r['敏感度']] }))
+      .filter(r => r.level && r.when && r.when.getTime() >= since)
+      .sort((a, b) => a.level.rank - b.level.rank || b.when - a.when);
+
+    if (items.length === 0) {
+      titleEl.textContent = '近 7 天沒有敏感新聞';
+      titleEl.classList.add('calm');
+      subEl.textContent = '系統每天 8:30 與 17:30 自動檢查';
+      levelsEl.innerHTML = '';
+      ticker.innerHTML = '';
+      list.innerHTML = '';
+      return;
+    }
+
+    titleEl.textContent = `近 7 天有 ${items.length} 則敏感新聞`;
+    titleEl.classList.remove('calm');
+    subEl.textContent = '滑鼠移到跑馬燈上可暫停，點標題開啟新聞';
+    levelsEl.innerHTML = Object.entries(LEVELS).map(([label, lv]) => {
+      const n = items.filter(i => i.level.key === lv.key).length;
+      return n ? `<span class="lv-chip">${label}<b>${n}</b></span>` : '';
+    }).join('');
+
+    const itemHtml = i => `
+      <a class="tick-item" href="${safeUrl(i['連結'])}" target="_blank" rel="noopener">
+        <span class="tick-lv lv-${i.level.key}">${esc(i['敏感度'])}</span>
+        <span class="tick-title">${esc(i['標題'])}</span>
+        <span class="tick-date">${esc(i['來源'])}　${fmtMD(i.when)}</span>
+      </a>`;
+    const once = items.map(itemHtml).join('');
+    // 內容複製兩份，讓跑馬燈無縫循環
+    ticker.innerHTML = `<div class="ticker-track" style="--dur:${Math.max(30, items.length * 12)}s">${once}${once}</div>`;
+    list.innerHTML = items.map(i => `<li>${itemHtml(i)}</li>`).join('');
+  } catch (err) {
+    titleEl.textContent = '敏感新聞讀取失敗';
+    subEl.textContent = `${err.message}。請確認「資策會敏感新聞監測」仍為發布到網路的狀態。`;
+  }
+}
+
+// ============================================================
+// 區塊二：新聞熱度前五名（移植自 news-monitor-iii 的分群邏輯）
+// ============================================================
+
+// 等同 Python difflib.SequenceMatcher(None, a, b).ratio()
+function seqRatio(a, b) {
+  const A = [...a], B = [...b];
+  const total = A.length + B.length;
+  if (!total) return 1;
+  function longest(alo, ahi, blo, bhi) {
+    let best = [alo, blo, 0];
+    let prev = new Map();
+    for (let i = alo; i < ahi; i++) {
+      const cur = new Map();
+      for (let j = blo; j < bhi; j++) {
+        if (A[i] === B[j]) {
+          const k = (prev.get(j - 1) || 0) + 1;
+          cur.set(j, k);
+          if (k > best[2]) best = [i - k + 1, j - k + 1, k];
+        }
+      }
+      prev = cur;
+    }
+    return best;
+  }
+  function matched(alo, ahi, blo, bhi) {
+    const [i, j, k] = longest(alo, ahi, blo, bhi);
+    if (!k) return 0;
+    return k + matched(alo, i, blo, j) + matched(i + k, ahi, j + k, bhi);
+  }
+  return (2 * matched(0, A.length, 0, B.length)) / total;
+}
+
+function shareKeyCombination(a, b) {
+  return HEAT_KEY_COMBINATIONS.some(combo => combo.every(w => a.includes(w)) && combo.every(w => b.includes(w)));
+}
+function commonHanCount(a, b) {
+  const setB = new Set(b);
+  return [...new Set(a)].filter(c => c >= '\u4e00' && c <= '\u9fff' && setB.has(c)).length;
+}
+
+// 相似標題歸成一組，熱度 = 不重複媒體家數，代表標題取最長的那則
+function groupSimilarTitles(items) {
+  const used = new Set();
+  const result = [];
+  items.forEach((a, i) => {
+    if (used.has(i)) return;
+    const group = [i];
+    used.add(i);
+    items.forEach((b, j) => {
+      if (used.has(j)) return;
+      if (commonHanCount(a.title, b.title) >= 6 || seqRatio(a.title, b.title) >= HEAT_SIMILARITY || shareKeyCombination(a.title, b.title)) {
+        group.push(j);
+        used.add(j);
+      }
+    });
+    const media = [...new Set(group.flatMap(k => items[k].media).filter(m => m && m !== 'nan'))];
+    const rep = group.reduce((best, k) => (items[k].title.length > items[best].title.length ? k : best), group[0]);
+    result.push({ ...items[rep], media, heat: media.length });
+  });
+  return result.sort((x, y) => y.heat - x.heat);
+}
+
+let heatRows = null;
+
+async function loadHeat() {
+  const box = document.getElementById('heat');
+  try {
+    heatRows = parseCSV(await fetchText(SOURCES.heat));
+    renderHeat();
+  } catch (err) {
+    box.innerHTML = `<p class="state error">新聞熱度讀取失敗：${esc(err.message)}。請確認新聞熱度的 Sheets 仍為發布到網路的狀態。</p>`;
+  }
+}
+
+function renderHeat() {
+  const box = document.getElementById('heat');
+  document.querySelectorAll('.period-btn').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.days === heatDays)));
+  document.getElementById('heat-note').textContent = `${HEAT_PERIODS[heatDays]}，相似新聞合併後依報導媒體家數排序`;
+  if (!heatRows) return;
+
+  const since = Date.now() - heatDays * 86400000;
+  const seen = new Set();
+  const items = [];
+  for (const r of heatRows) {
+    const when = new Date(r['published_at']);
+    const title = r['title'] || '';
+    if (isNaN(when) || when.getTime() < since) continue;
+    if (HEAT_BLOCKED_SOURCES.includes(r['source'])) continue;
+    if (!title.includes('資策會')) continue;
+    if (seen.has(title)) continue;
+    seen.add(title);
+    const media = r['media_list'] ? r['media_list'].split(' · ') : [r['source'] || '未知來源'];
+    items.push({ title, url: r['url'], when, keyword: r['keyword'], media });
+  }
+  // 與原本相同，分群做兩次
+  const top = groupSimilarTitles(groupSimilarTitles(items)).slice(0, 5);
+
+  if (top.length === 0) {
+    box.innerHTML = `<p class="state">${HEAT_PERIODS[heatDays]}沒有提到資策會的新聞，可以切換到較長的區間看看。</p>`;
+    return;
+  }
+  box.innerHTML = `<ol class="heat-list">${top.map((g, i) => {
+    const shown = g.media.slice(0, 4).join('、') + (g.media.length > 4 ? ` 等 ${g.media.length} 家` : '');
+    return `
+      <li class="heat-item">
+        <span class="heat-rank" aria-label="第 ${i + 1} 名">${i + 1}</span>
+        <a class="heat-title" href="${safeUrl(g.url)}" target="_blank" rel="noopener">${esc(g.title)}</a>
+        <span class="heat-count"><b>${g.heat}</b><span>家媒體</span></span>
+        <span class="heat-media">${esc(shown)}　${fmtMD(g.when)}</span>
+      </li>`;
+  }).join('')}</ol>`;
+}
+
+// ============================================================
+// 區塊三：社群月度表現（FB、IG 分開呈現）
+// ============================================================
+function num(v) {
+  const n = Number(String(v ?? '').replace(/,/g, ''));
+  return String(v ?? '').trim() === '' || isNaN(n) ? NaN : n;
+}
+function changeHtml(cur, prev) {
+  if (!Number.isFinite(cur) || !Number.isFinite(prev) || prev === 0) return '';
+  const pct = Math.round(((cur - prev) / prev) * 100);
+  if (pct === 0) return '<span class="chg">持平</span>';
+  return pct > 0
+    ? `<span class="chg up">▲ ${pct}%</span>`
+    : `<span class="chg down">▼ ${Math.abs(pct)}%</span>`;
+}
+function sparkline(values, color) {
+  const pts = values.map((v, i) => [i, v]).filter(([, v]) => Number.isFinite(v));
+  if (pts.length < 2) return '';
+  const w = 150, h = 46, pad = 4;
+  const max = Math.max(...pts.map(p => p[1])), min = Math.min(...pts.map(p => p[1]));
+  const x = i => pad + (i / (values.length - 1)) * (w - pad * 2);
+  const y = v => h - pad - (max === min ? 0.5 : (v - min) / (max - min)) * (h - pad * 2);
+  const d = pts.map(([i, v], k) => `${k ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  const [li, lv] = pts[pts.length - 1];
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" role="img" aria-label="近 ${values.length} 個月趨勢">
+    <path d="${d}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${x(li).toFixed(1)}" cy="${y(lv).toFixed(1)}" r="3.5" fill="${color}"/>
+  </svg>`;
+}
+function platformHtml({ name, cls, color, rows, main, others }) {
+  const valid = rows.filter(r => Number.isFinite(num(r[main.col])));
+  if (valid.length === 0) return `<div class="platform ${cls}"><h3>${name}</h3><p class="state">尚無資料</p></div>`;
+  const cur = valid[valid.length - 1];
+  const prev = valid[valid.length - 2];
+  const series = rows.map(r => num(r[main.col]));
+  const metric = m => {
+    const c = num(cur[m.col]);
+    if (!Number.isFinite(c)) return '';
+    return `<span class="metric">${m.label} <b>${fmtNum(c)}</b>${prev ? changeHtml(c, num(prev[m.col])) : ''}</span>`;
+  };
+  return `
+    <div class="platform ${cls}">
+      <h3>${name}　${esc(cur['月份'])}</h3>
+      <div class="platform-main">
+        <div>
+          <div class="big-num">${fmtNum(num(cur[main.col]))}${prev ? changeHtml(num(cur[main.col]), num(prev[main.col])) : ''}</div>
+          <div class="big-label">${main.label}</div>
+        </div>
+        ${sparkline(series, color)}
+      </div>
+      <div class="metrics">${others.map(metric).join('')}</div>
+    </div>`;
+}
+
+async function loadSocial() {
+  const box = document.getElementById('social');
+  try {
+    const rows = parseCSV(await fetchText(SOURCES.social))
+      .filter(r => /^\d{4}-\d{2}$/.test(r['月份']))
+      .sort((a, b) => a['月份'].localeCompare(b['月份']));
+    if (rows.length === 0) {
+      box.innerHTML = '<p class="state">社群數據還沒有任何月份的資料。</p>';
+      return;
+    }
+    document.getElementById('social-note').textContent = `FB 與 IG 各自的最新月份，括號為與前一個月相比，右側小圖是 ${rows.length} 個月的趨勢`;
+    box.innerHTML = `<div class="social-grid">
+      ${platformHtml({
+        name: 'Facebook', cls: 'fb', color: '#4e7a55', rows,
+        main: { col: 'FB觸及人數', label: '觸及人數' },
+        others: [
+          { col: 'FB貼文互動', label: '貼文互動' },
+          { col: 'FB頁面瀏覽', label: '頁面瀏覽' },
+          { col: 'FB新增追蹤', label: '新增追蹤' },
+          { col: 'FB影片觀看', label: '影片觀看' },
+          { col: 'FB粉絲總數', label: '粉絲總數' },
+        ],
+      })}
+      ${platformHtml({
+        name: 'Instagram', cls: 'ig', color: '#b8860b', rows,
+        main: { col: 'IG瀏覽次數', label: '瀏覽次數' },
+        others: [
+          { col: 'IG觸及帳號', label: '觸及帳號' },
+          { col: 'IG互動次數', label: '互動次數' },
+          { col: 'IG追蹤者數', label: '追蹤者數' },
+        ],
+      })}
+    </div>`;
+  } catch (err) {
+    box.innerHTML = `<p class="state error">社群數據讀取失敗：${esc(err.message)}。請確認社群數據的 Sheets 仍為發布到網路的狀態。</p>`;
+  }
+}
+
+// ============================================================
+// 區塊四：新聞露出月報（iii-newsroom 最新月份）
+// ============================================================
+async function loadReport() {
+  const box = document.getElementById('report');
+  try {
+    const manifest = JSON.parse(await fetchText(SOURCES.newsroomBase + 'manifest.json'));
+    const month = (manifest.months || []).slice().sort().pop();
+    if (!month) throw new Error('月報清單是空的');
+    const d = JSON.parse(await fetchText(`${SOURCES.newsroomBase}${month}.json`));
+    document.getElementById('report-note').textContent = `${d.monthLabel || month}，資料來自 iii-newsroom`;
+
+    const total = d.total || 0;
+    const senti = [
+      { label: '正面', n: d.positive || 0, color: '#4e7a55' },
+      { label: '中立', n: d.neutral || 0, color: '#a9b8ad' },
+      { label: '負面', n: d.negative || 0, color: '#b3261e' },
+    ];
+    const pct = n => (total ? (n / total) * 100 : 0);
+    const media = (d.topMedia || []).slice(0, 5);
+    const depts = (d.depts || []).slice().sort((a, b) => b.total - a.total);
+    const maxDept = Math.max(1, ...depts.map(x => x.total));
+
+    box.innerHTML = `<div class="report-grid">
+      <div>
+        <div class="report-total">${fmtNum(total)}<small>則報導</small></div>
+        <div class="senti-bar" role="img" aria-label="正面 ${senti[0].n} 則、中立 ${senti[1].n} 則、負面 ${senti[2].n} 則">
+          ${senti.map(s => `<span style="width:${pct(s.n)}%;background:${s.color}"></span>`).join('')}
+        </div>
+        <div class="senti-legend">
+          ${senti.map(s => `<span><i class="dot" style="background:${s.color}"></i>${s.label} ${fmtNum(s.n)}</span>`).join('')}
+        </div>
+        <a class="more-link" href="${SOURCES.newsroomPage}" target="_blank" rel="noopener">開啟完整月報</a>
+      </div>
+      <div>
+        <p class="sub-h">報導最多的媒體</p>
+        <ul class="media-list">
+          ${media.map(m => `<li><span>${esc(m.name)}</span><b>${fmtNum(m.count)}</b></li>`).join('')}
+        </ul>
+      </div>
+      <div>
+        <p class="sub-h">各單位露出</p>
+        ${depts.map(x => `
+          <div class="dept-row">
+            <span>${esc(x.short || x.name)}</span>
+            <span class="dept-bar"><span style="width:${(x.total / maxDept) * 100}%;background:${esc(x.color || '#4e7a55')}"></span></span>
+            <b>${fmtNum(x.total)}</b>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  } catch (err) {
+    box.innerHTML = `<p class="state error">新聞露出月報讀取失敗：${esc(err.message)}。請確認 iii-newsroom 的 data/manifest.json 存在。</p>`;
+  }
+}
+
+// ============================================================
+// 啟動
+// ============================================================
+async function loadAll() {
+  const btn = document.getElementById('refresh');
+  btn.disabled = true;
+  await Promise.allSettled([loadSensitive(), loadHeat(), loadSocial(), loadReport()]);
+  const now = new Date();
+  document.getElementById('updated').textContent =
+    `更新於 ${now.getMonth() + 1}/${now.getDate()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  btn.disabled = false;
+}
+document.getElementById('refresh').addEventListener('click', loadAll);
+document.querySelectorAll('.period-btn').forEach(btn => btn.addEventListener('click', () => {
+  heatDays = +btn.dataset.days;
+  renderHeat();
+}));
+loadAll();
+setInterval(loadAll, REFRESH_MS);
+</script>
+</body>
+</html>
