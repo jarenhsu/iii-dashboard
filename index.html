@@ -62,14 +62,16 @@
   /* ---------- 敏感新聞快報 ---------- */
   .alert-band {
     background: var(--black-2); color: #fff;
-    padding: 1.6rem clamp(1rem, 4vw, 2.5rem) 1.4rem;
+    padding: 1.1rem clamp(1rem, 4vw, 2.5rem) 1.2rem;
     border-bottom: 6px solid var(--accent);
   }
   .alert-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.4rem 1.2rem; }
   .alert-count { font-size: clamp(2rem, 5vw, 2.8rem); font-weight: 900; line-height: 1.1; }
   .alert-count.calm { color: #e6e6e6; }
   .alert-sub { font-size: 1rem; color: #b5b5b5; }
-  .alert-levels { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-left: auto; }
+  .alert-levels { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+  .alert-head:empty, .alert-levels:empty { display: none; }
+  .ticker-empty { margin: 0; padding: 0.85rem 1rem; color: #b5b5b5; font-size: 1rem; }
   .lv-chip {
     font-size: 0.85rem; font-weight: 700; padding: 0.15rem 0.7rem; border-radius: 999px;
     background: rgba(255,255,255,0.1); color: #fff;
@@ -77,7 +79,7 @@
   .lv-chip b { font-size: 1rem; margin-left: 0.3rem; }
 
   .ticker {
-    margin-top: 1.1rem; overflow: hidden; position: relative;
+    margin-top: 0.8rem; overflow: hidden; position: relative;
     background: rgba(255,255,255,0.06); border-radius: 8px;
     mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent);
   }
@@ -107,15 +109,16 @@
   .row > section, .report-grid > div { min-width: 0; }
   @media (max-width: 900px) { .row { grid-template-columns: minmax(0, 1fr); } }
   section h2 {
-    font-size: 1.3rem; font-weight: 900; margin: 0 0 0.2rem; color: var(--ink);
+    font-size: 1.3rem; font-weight: 900; margin: 0 0 0.8rem; color: var(--ink);
   }
+  .section-head h2 { margin: 0; }
   .section-note { font-size: 0.85rem; color: var(--muted); margin: 0 0 1rem; }
   .panel { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 1.3rem 1.4rem; }
   .state { color: var(--muted); font-size: 0.95rem; padding: 1rem 0; }
   .state.error { color: var(--lv-superhigh); }
 
   /* ---------- 新聞熱度 ---------- */
-  .section-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+  .section-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.8rem; }
   .period-switch { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #fff; }
   .period-btn { font: inherit; font-size: 0.85rem; padding: 0.25rem 0.8rem; border: none; background: transparent; color: var(--muted); cursor: pointer; }
   .period-btn[aria-pressed="true"] { background: var(--ink); color: #fff; font-weight: 700; }
@@ -216,13 +219,11 @@
   </div>
 </header>
 
-<section class="alert-band" aria-labelledby="alert-title">
+<section class="alert-band" aria-label="敏感新聞快報">
   <div class="alert-head">
-    <div class="alert-count" id="alert-title">載入中</div>
-    <div class="alert-sub" id="alert-sub">近 7 天的敏感新聞</div>
     <div class="alert-levels" id="alert-levels"></div>
   </div>
-  <div class="ticker" id="ticker" aria-hidden="true"></div>
+  <div class="ticker" id="ticker"></div>
   <ul class="alert-list" id="alert-list"></ul>
 </section>
 
@@ -236,7 +237,6 @@
           <button type="button" class="period-btn" data-days="30" aria-pressed="false">30 天</button>
         </div>
       </div>
-      <p class="section-note" id="heat-note">過去 7 天</p>
       <div class="panel" id="heat"><p class="state">載入中</p></div>
     </section>
 
@@ -248,7 +248,6 @@
           <button type="button" class="period-btn social-btn" data-mode="month" aria-pressed="false">當月</button>
         </div>
       </div>
-      <p class="section-note" id="social-note">FB 與 IG 數據</p>
       <div class="panel" id="social"><p class="state">載入中</p></div>
     </section>
   </div>
@@ -258,13 +257,11 @@
       <h2 id="video-h">YouTube 最新影片</h2>
       <a class="channel-link" href="https://www.youtube.com/@weloveIII0724" target="_blank" rel="noopener">前往頻道</a>
     </div>
-    <p class="section-note">資策會官方頻道最新上架的三支影片</p>
     <div id="videos"><p class="state">載入中</p></div>
   </section>
 
   <section class="report" aria-labelledby="report-h">
     <h2 id="report-h">年度新聞露出</h2>
-    <p class="section-note" id="report-note">今年累計</p>
     <div class="panel" id="report"><p class="state">載入中</p></div>
   </section>
 </main>
@@ -368,8 +365,6 @@ function fmtMD(date) {
 // 區塊一：敏感新聞快報
 // ============================================================
 async function loadSensitive() {
-  const titleEl = document.getElementById('alert-title');
-  const subEl = document.getElementById('alert-sub');
   const levelsEl = document.getElementById('alert-levels');
   const ticker = document.getElementById('ticker');
   const list = document.getElementById('alert-list');
@@ -382,18 +377,12 @@ async function loadSensitive() {
       .sort((a, b) => a.level.rank - b.level.rank || b.when - a.when);
 
     if (items.length === 0) {
-      titleEl.textContent = '近 7 天沒有敏感新聞';
-      titleEl.classList.add('calm');
-      subEl.textContent = '系統每天 8:30 與 17:30 自動檢查';
       levelsEl.innerHTML = '';
-      ticker.innerHTML = '';
+      ticker.innerHTML = '<p class="ticker-empty">近 7 天沒有敏感新聞</p>';
       list.innerHTML = '';
       return;
     }
 
-    titleEl.textContent = `近 7 天有 ${items.length} 則敏感新聞`;
-    titleEl.classList.remove('calm');
-    subEl.textContent = '滑鼠移到跑馬燈上可暫停，點標題開啟新聞';
     levelsEl.innerHTML = Object.entries(LEVELS).map(([label, lv]) => {
       const n = items.filter(i => i.level.key === lv.key).length;
       return n ? `<span class="lv-chip chip-${lv.key}">${label}<b>${n}</b></span>` : '';
@@ -410,8 +399,7 @@ async function loadSensitive() {
     ticker.innerHTML = `<div class="ticker-track" style="--dur:${Math.max(30, items.length * 12)}s">${once}${once}</div>`;
     list.innerHTML = items.map(i => `<li>${itemHtml(i)}</li>`).join('');
   } catch (err) {
-    titleEl.textContent = '敏感新聞讀取失敗';
-    subEl.textContent = `${err.message}。請確認「資策會敏感新聞監測」仍為發布到網路的狀態。`;
+    ticker.innerHTML = `<p class="ticker-empty">敏感新聞讀取失敗：${esc(err.message)}</p>`;
   }
 }
 
@@ -493,7 +481,6 @@ async function loadHeat() {
 function renderHeat() {
   const box = document.getElementById('heat');
   document.querySelectorAll('.period-btn[data-days]').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.days === heatDays)));
-  document.getElementById('heat-note').textContent = `${HEAT_PERIODS[heatDays]}，相似新聞合併後依報導媒體家數排序`;
   if (!heatRows) return;
 
   const since = Date.now() - heatDays * 86400000;
@@ -664,9 +651,6 @@ function renderSocial() {
   document.querySelectorAll('.social-btn').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === socialMode)));
   if (!socialRows) return;
   const latest = socialRows[socialRows.length - 1]['月份'];
-  document.getElementById('social-note').textContent = socialMode === 'year'
-    ? 'FB、IG、Threads、YouTube 今年各月加總（粉絲、追蹤者數為最新值），右側小圖是每月趨勢'
-    : `FB、IG、Threads、YouTube 最新月份（${latest}），括號為與前一個月相比`;
   box.innerHTML = `<div class="social-grid">${SOCIAL_PLATFORMS.map(p => platformHtml(p, p.source === 'youtube' ? ytRows : socialRows)).join('')}</div>`;
 }
 
@@ -761,7 +745,6 @@ async function loadReport() {
     const firstM = monthly[0].month, lastM = monthly[monthly.length - 1].month;
     const rangeLabel = firstM === lastM ? `${year} 年 ${firstM} 月` : `${year} 年 ${firstM} 至 ${lastM} 月`;
     document.getElementById('report-h').textContent = `${year} 年新聞露出`;
-    document.getElementById('report-note').textContent = `${rangeLabel}累計，資料來自 iii-newsroom，新增月份後會自動納入`;
 
     const senti = [
       { label: '正面', n: positive, color: '#141414' },
