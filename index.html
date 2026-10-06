@@ -241,8 +241,14 @@
     </section>
 
     <section aria-labelledby="social-h">
-      <h2 id="social-h">社群月度表現</h2>
-      <p class="section-note" id="social-note">FB 與 IG 各自的最新月份數據</p>
+      <div class="section-head">
+        <h2 id="social-h">社群表現</h2>
+        <div class="period-switch" role="group" aria-label="社群數據區間">
+          <button type="button" class="period-btn social-btn" data-mode="year" aria-pressed="true">年度</button>
+          <button type="button" class="period-btn social-btn" data-mode="month" aria-pressed="false">當月</button>
+        </div>
+      </div>
+      <p class="section-note" id="social-note">FB 與 IG 數據</p>
       <div class="panel" id="social"><p class="state">載入中</p></div>
     </section>
   </div>
@@ -487,7 +493,7 @@ async function loadHeat() {
 
 function renderHeat() {
   const box = document.getElementById('heat');
-  document.querySelectorAll('.period-btn').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.days === heatDays)));
+  document.querySelectorAll('.period-btn[data-days]').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.days === heatDays)));
   document.getElementById('heat-note').textContent = `${HEAT_PERIODS[heatDays]}，相似新聞合併後依報導媒體家數排序`;
   if (!heatRows) return;
 
@@ -553,29 +559,95 @@ function sparkline(values, color) {
     <circle cx="${x(li).toFixed(1)}" cy="${y(lv).toFixed(1)}" r="3.5" fill="${color}"/>
   </svg>`;
 }
-function platformHtml({ name, cls, color, rows, main, others }) {
-  const valid = rows.filter(r => Number.isFinite(num(r[main.col])));
-  if (valid.length === 0) return `<div class="platform ${cls}"><h3>${name}</h3><p class="state">尚無資料</p></div>`;
+// 存量型欄位（粉絲數、追蹤者數）年度模式取最新值，不加總
+const SOCIAL_STOCK_COLS = ['FB粉絲總數', 'IG追蹤者數'];
+const SOCIAL_PLATFORMS = [
+  {
+    name: 'Facebook', cls: 'fb', color: '#4e7a55',
+    main: { col: 'FB觸及人數', label: '觸及人數' },
+    others: [
+      { col: 'FB貼文互動', label: '貼文互動' },
+      { col: 'FB頁面瀏覽', label: '頁面瀏覽' },
+      { col: 'FB新增追蹤', label: '新增追蹤' },
+      { col: 'FB影片觀看', label: '影片觀看' },
+      { col: 'FB粉絲總數', label: '粉絲總數' },
+    ],
+  },
+  {
+    name: 'Instagram', cls: 'ig', color: '#b8860b',
+    main: { col: 'IG瀏覽次數', label: '瀏覽次數' },
+    others: [
+      { col: 'IG觸及帳號', label: '觸及帳號' },
+      { col: 'IG互動次數', label: '互動次數' },
+      { col: 'IG追蹤者數', label: '追蹤者數' },
+    ],
+  },
+];
+let socialRows = null;
+let socialMode = 'year';
+
+function platformHtml(p, rows) {
+  const valid = rows.filter(r => Number.isFinite(num(r[p.main.col])));
+  if (valid.length === 0) return `<div class="platform ${p.cls}"><h3>${p.name}</h3><p class="state">尚無資料</p></div>`;
+  const series = rows.map(r => num(r[p.main.col]));
+
+  if (socialMode === 'year') {
+    const year = valid[valid.length - 1]['月份'].slice(0, 4);
+    const yr = valid.filter(r => r['月份'].startsWith(year));
+    const firstM = +yr[0]['月份'].slice(5), lastM = +yr[yr.length - 1]['月份'].slice(5);
+    const yearValue = col => {
+      const vals = yr.map(r => num(r[col])).filter(Number.isFinite);
+      if (vals.length === 0) return NaN;
+      return SOCIAL_STOCK_COLS.includes(col) ? vals[vals.length - 1] : vals.reduce((a, b) => a + b, 0);
+    };
+    const metric = m => {
+      const v = yearValue(m.col);
+      return Number.isFinite(v) ? `<span class="metric">${m.label} <b>${fmtNum(v)}</b></span>` : '';
+    };
+    return `
+      <div class="platform ${p.cls}">
+        <h3>${p.name}　${year} 年 ${firstM === lastM ? firstM : `${firstM} 至 ${lastM}`} 月累計</h3>
+        <div class="platform-main">
+          <div>
+            <div class="big-num">${fmtNum(yearValue(p.main.col))}</div>
+            <div class="big-label">${p.main.label}</div>
+          </div>
+          ${sparkline(yr.map(r => num(r[p.main.col])), p.color)}
+        </div>
+        <div class="metrics">${p.others.map(metric).join('')}</div>
+      </div>`;
+  }
+
   const cur = valid[valid.length - 1];
   const prev = valid[valid.length - 2];
-  const series = rows.map(r => num(r[main.col]));
   const metric = m => {
     const c = num(cur[m.col]);
     if (!Number.isFinite(c)) return '';
     return `<span class="metric">${m.label} <b>${fmtNum(c)}</b>${prev ? changeHtml(c, num(prev[m.col])) : ''}</span>`;
   };
   return `
-    <div class="platform ${cls}">
-      <h3>${name}　${esc(cur['月份'])}</h3>
+    <div class="platform ${p.cls}">
+      <h3>${p.name}　${esc(cur['月份'])}</h3>
       <div class="platform-main">
         <div>
-          <div class="big-num">${fmtNum(num(cur[main.col]))}${prev ? changeHtml(num(cur[main.col]), num(prev[main.col])) : ''}</div>
-          <div class="big-label">${main.label}</div>
+          <div class="big-num">${fmtNum(num(cur[p.main.col]))}${prev ? changeHtml(num(cur[p.main.col]), num(prev[p.main.col])) : ''}</div>
+          <div class="big-label">${p.main.label}</div>
         </div>
-        ${sparkline(series, color)}
+        ${sparkline(series, p.color)}
       </div>
-      <div class="metrics">${others.map(metric).join('')}</div>
+      <div class="metrics">${p.others.map(metric).join('')}</div>
     </div>`;
+}
+
+function renderSocial() {
+  const box = document.getElementById('social');
+  document.querySelectorAll('.social-btn').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === socialMode)));
+  if (!socialRows) return;
+  const latest = socialRows[socialRows.length - 1]['月份'];
+  document.getElementById('social-note').textContent = socialMode === 'year'
+    ? 'FB 與 IG 今年各月加總（粉絲、追蹤者數為最新值），右側小圖是每月趨勢'
+    : `FB 與 IG 最新月份（${latest}），括號為與前一個月相比`;
+  box.innerHTML = `<div class="social-grid">${SOCIAL_PLATFORMS.map(p => platformHtml(p, socialRows)).join('')}</div>`;
 }
 
 async function loadSocial() {
@@ -588,29 +660,8 @@ async function loadSocial() {
       box.innerHTML = '<p class="state">社群數據還沒有任何月份的資料。</p>';
       return;
     }
-    document.getElementById('social-note').textContent = `FB 與 IG 各自的最新月份，括號為與前一個月相比，右側小圖是 ${rows.length} 個月的趨勢`;
-    box.innerHTML = `<div class="social-grid">
-      ${platformHtml({
-        name: 'Facebook', cls: 'fb', color: '#4e7a55', rows,
-        main: { col: 'FB觸及人數', label: '觸及人數' },
-        others: [
-          { col: 'FB貼文互動', label: '貼文互動' },
-          { col: 'FB頁面瀏覽', label: '頁面瀏覽' },
-          { col: 'FB新增追蹤', label: '新增追蹤' },
-          { col: 'FB影片觀看', label: '影片觀看' },
-          { col: 'FB粉絲總數', label: '粉絲總數' },
-        ],
-      })}
-      ${platformHtml({
-        name: 'Instagram', cls: 'ig', color: '#b8860b', rows,
-        main: { col: 'IG瀏覽次數', label: '瀏覽次數' },
-        others: [
-          { col: 'IG觸及帳號', label: '觸及帳號' },
-          { col: 'IG互動次數', label: '互動次數' },
-          { col: 'IG追蹤者數', label: '追蹤者數' },
-        ],
-      })}
-    </div>`;
+    socialRows = rows;
+    renderSocial();
   } catch (err) {
     box.innerHTML = `<p class="state error">社群數據讀取失敗：${esc(err.message)}。請確認社群數據的 Sheets 仍為發布到網路的狀態。</p>`;
   }
@@ -800,9 +851,13 @@ async function loadAll() {
   btn.disabled = false;
 }
 document.getElementById('refresh').addEventListener('click', loadAll);
-document.querySelectorAll('.period-btn').forEach(btn => btn.addEventListener('click', () => {
+document.querySelectorAll('.period-btn[data-days]').forEach(btn => btn.addEventListener('click', () => {
   heatDays = +btn.dataset.days;
   renderHeat();
+}));
+document.querySelectorAll('.social-btn').forEach(btn => btn.addEventListener('click', () => {
+  socialMode = btn.dataset.mode;
+  renderSocial();
 }));
 loadAll();
 setInterval(loadAll, REFRESH_MS);
