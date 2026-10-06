@@ -145,6 +145,28 @@
   .chg.up { color: var(--up); }
   .chg.down { color: var(--down); }
 
+  /* ---------- YouTube ---------- */
+  .videos { margin-top: 2.2rem; }
+  .channel-link { font-size: 0.9rem; font-weight: 700; color: var(--moss); }
+  .video-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.4rem; }
+  @media (max-width: 900px) { .video-grid { grid-template-columns: minmax(0, 1fr); } }
+  .video-card { display: block; text-decoration: none; background: #fff; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .video-card:hover { border-color: var(--moss); }
+  .video-card:hover .video-title { text-decoration: underline; }
+  .thumb { position: relative; aspect-ratio: 16 / 9; background: var(--forest-2); }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .play {
+    position: absolute; right: 0.7rem; bottom: 0.7rem; width: 2.6rem; height: 2.6rem; border-radius: 50%;
+    background: rgba(31,58,46,0.85); display: grid; place-items: center;
+  }
+  .play::after { content: ""; border-left: 0.75rem solid #fff; border-top: 0.45rem solid transparent; border-bottom: 0.45rem solid transparent; margin-left: 0.2rem; }
+  .video-body { padding: 0.8rem 1rem 1rem; }
+  .video-title {
+    font-size: 1rem; font-weight: 700; line-height: 1.5; margin: 0;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .video-date { font-size: 0.85rem; color: var(--muted); margin-top: 0.3rem; }
+
   /* ---------- 新聞露出月報 ---------- */
   .report { margin-top: 2.2rem; }
   .report-grid { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 1.8rem; }
@@ -216,6 +238,15 @@
     </section>
   </div>
 
+  <section class="videos" aria-labelledby="video-h">
+    <div class="section-head">
+      <h2 id="video-h">YouTube 最新影片</h2>
+      <a class="channel-link" href="https://www.youtube.com/@weloveIII0724" target="_blank" rel="noopener">前往頻道</a>
+    </div>
+    <p class="section-note">資策會官方頻道最新上架的三支影片</p>
+    <div id="videos"><p class="state">載入中</p></div>
+  </section>
+
   <section class="report" aria-labelledby="report-h">
     <h2 id="report-h">年度新聞露出</h2>
     <p class="section-note" id="report-note">今年累計</p>
@@ -223,7 +254,7 @@
   </section>
 </main>
 
-<footer>資料來源：n8n 敏感新聞監測、新聞熱度觀測、社群數據、iii-newsroom。每 10 分鐘自動更新。</footer>
+<footer>資料來源：n8n 敏感新聞監測、新聞熱度觀測、社群數據、YouTube 頻道、iii-newsroom。每 10 分鐘自動更新。</footer>
 
 <script>
 // ============================================================
@@ -233,6 +264,8 @@ const SOURCES = {
   sensitive: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ244BWCxM4cZAFYCX-HQvlKlr11c8U6weArg_cvg3vgyLar4eTsAokLYPrT6Dptz1xfC1T8iLuKiBt/pub?gid=0&single=true&output=csv',
   heat: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQcN9ArvYVR01tP5qwtFieAtS16o2-_d2Rv6tqBJCvpfb1sVCJXi6D_xecn06MK1vBDVRKEr5c4g88I/pub?gid=0&single=true&output=csv',
   social: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQtWeKJOOWHM44KvgkQl_dBRbG6pFl8RzC4BWKlOF90rCTcbOsOKBgzw_744YljOTr-IN5ZHeNgI7zS/pub?gid=0&single=true&output=csv',
+  youtube: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQtWeKJOOWHM44KvgkQl_dBRbG6pFl8RzC4BWKlOF90rCTcbOsOKBgzw_744YljOTr-IN5ZHeNgI7zS/pub?gid=595465853&single=true&output=csv',
+  youtubeChannel: 'https://www.youtube.com/@weloveIII0724',
   newsroomBase: 'https://raw.githubusercontent.com/jarenhsu/iii-newsroom/main/data/',
   newsroomPage: 'https://jarenhsu.github.io/iii-newsroom/',
 };
@@ -573,6 +606,41 @@ async function loadSocial() {
 }
 
 // ============================================================
+// 區塊：YouTube 最新影片
+// ============================================================
+async function loadVideos() {
+  const box = document.getElementById('videos');
+  try {
+    const rows = parseCSV(await fetchText(SOURCES.youtube))
+      .map(r => ({ ...r, when: new Date(r['發布時間']) }))
+      .filter(r => r['影片ID'] && !isNaN(r.when))
+      .sort((a, b) => b.when - a.when)
+      .slice(0, 3);
+    if (rows.length === 0) {
+      box.innerHTML = '<p class="state">還沒有影片資料。請確認 n8n 的 YouTube 流程有正常寫入。</p>';
+      return;
+    }
+    box.innerHTML = `<div class="video-grid">${rows.map(v => {
+      const id = encodeURIComponent(v['影片ID']);
+      const date = `${v.when.getFullYear()}/${v.when.getMonth() + 1}/${v.when.getDate()}`;
+      return `
+        <a class="video-card" href="${safeUrl(v['連結'])}" target="_blank" rel="noopener">
+          <div class="thumb">
+            <img src="https://i.ytimg.com/vi/${id}/mqdefault.jpg" alt="" loading="lazy" onerror="this.remove()">
+            <span class="play" aria-hidden="true"></span>
+          </div>
+          <div class="video-body">
+            <p class="video-title">${esc(v['標題'])}</p>
+            <div class="video-date">${date} 上架</div>
+          </div>
+        </a>`;
+    }).join('')}</div>`;
+  } catch (err) {
+    box.innerHTML = `<p class="state error">YouTube 影片讀取失敗：${esc(err.message)}。請確認「YouTube影片」分頁仍為發布到網路的狀態。</p>`;
+  }
+}
+
+// ============================================================
 // 區塊四：新聞露出年度總覽（彙整 iii-newsroom 當年度所有月份）
 // ============================================================
 async function loadReport() {
@@ -664,7 +732,7 @@ async function loadReport() {
 async function loadAll() {
   const btn = document.getElementById('refresh');
   btn.disabled = true;
-  await Promise.allSettled([loadSensitive(), loadHeat(), loadSocial(), loadReport()]);
+  await Promise.allSettled([loadSensitive(), loadHeat(), loadSocial(), loadVideos(), loadReport()]);
   const now = new Date();
   document.getElementById('updated').textContent =
     `更新於 ${now.getMonth() + 1}/${now.getDate()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
