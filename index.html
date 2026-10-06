@@ -133,6 +133,7 @@
   .social-grid { display: grid; gap: 1.2rem; }
   .platform { border-left: 5px solid var(--moss); padding: 0.2rem 0 0.2rem 1rem; }
   .platform.ig { border-left-color: var(--gold); }
+  .platform.yt { border-left-color: #a0522d; }
   .platform h3 { margin: 0 0 0.4rem; font-size: 1.05rem; color: var(--forest); }
   .platform-main { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 0.5rem 1rem; }
   .social-grid > * { min-width: 0; }
@@ -148,15 +149,6 @@
   /* ---------- YouTube ---------- */
   .videos { margin-top: 2.2rem; }
   .channel-link { font-size: 0.9rem; font-weight: 700; color: var(--moss); }
-  .yt-stats { margin-bottom: 1.4rem; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 1.8rem; align-items: end; }
-  @media (max-width: 900px) { .yt-stats { grid-template-columns: minmax(0, 1fr); } }
-  .yt-kpis { display: flex; flex-wrap: wrap; gap: 1rem 2.2rem; }
-  .yt-kpi .num { font-size: 2.2rem; font-weight: 900; line-height: 1.1; color: var(--forest); font-variant-numeric: tabular-nums; }
-  .yt-kpi .num small { font-size: 0.9rem; font-weight: 500; color: var(--muted); margin-left: 0.2rem; }
-  .yt-kpi .lbl { font-size: 0.9rem; color: var(--muted); }
-  .yt-stats .month-bars { height: 110px; }
-  .yt-stats .mb-col span { background: var(--gold); }
-
   .video-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.4rem; }
   @media (max-width: 900px) { .video-grid { grid-template-columns: minmax(0, 1fr); } }
   .video-card { display: block; text-decoration: none; background: #fff; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
@@ -255,11 +247,10 @@
 
   <section class="videos" aria-labelledby="video-h">
     <div class="section-head">
-      <h2 id="video-h">YouTube 頻道</h2>
+      <h2 id="video-h">YouTube 最新影片</h2>
       <a class="channel-link" href="https://www.youtube.com/@weloveIII0724" target="_blank" rel="noopener">前往頻道</a>
     </div>
-    <p class="section-note" id="yt-note">頻道年度數據與最新上架的三支影片</p>
-    <div class="panel yt-stats" id="yt-stats"><p class="state">載入中</p></div>
+    <p class="section-note">資策會官方頻道最新上架的三支影片</p>
     <div id="videos"><p class="state">載入中</p></div>
   </section>
 
@@ -315,7 +306,7 @@ function safeUrl(u) {
   return /^https?:\/\//i.test(u || '') ? esc(u) : '#';
 }
 function fmtNum(n) {
-  return Number.isFinite(n) ? n.toLocaleString('zh-TW') : '–';
+  return Number.isFinite(n) ? Math.round(n).toLocaleString('zh-TW') : '–';
 }
 
 // 可處理引號、逗號、換行的 CSV 解析
@@ -563,7 +554,7 @@ function sparkline(values, color) {
 const SOCIAL_STOCK_COLS = ['FB粉絲總數', 'IG追蹤者數'];
 const SOCIAL_PLATFORMS = [
   {
-    name: 'Facebook', cls: 'fb', color: '#4e7a55',
+    name: 'Facebook', cls: 'fb', color: '#4e7a55', source: 'meta',
     main: { col: 'FB觸及人數', label: '觸及人數' },
     others: [
       { col: 'FB貼文互動', label: '貼文互動' },
@@ -574,7 +565,7 @@ const SOCIAL_PLATFORMS = [
     ],
   },
   {
-    name: 'Instagram', cls: 'ig', color: '#b8860b',
+    name: 'Instagram', cls: 'ig', color: '#b8860b', source: 'meta',
     main: { col: 'IG瀏覽次數', label: '瀏覽次數' },
     others: [
       { col: 'IG觸及帳號', label: '觸及帳號' },
@@ -582,7 +573,17 @@ const SOCIAL_PLATFORMS = [
       { col: 'IG追蹤者數', label: '追蹤者數' },
     ],
   },
+  {
+    name: 'YouTube', cls: 'yt', color: '#a0522d', source: 'youtube',
+    main: { col: '觀看次數', label: '觀看次數' },
+    others: [
+      { col: '曝光次數', label: '曝光次數' },
+      { col: '觀看時數', label: '觀看時數（小時）' },
+      { col: '新增訂閱', label: '新增訂閱' },
+    ],
+  },
 ];
+let ytRows = [];
 let socialRows = null;
 let socialMode = 'year';
 
@@ -645,9 +646,9 @@ function renderSocial() {
   if (!socialRows) return;
   const latest = socialRows[socialRows.length - 1]['月份'];
   document.getElementById('social-note').textContent = socialMode === 'year'
-    ? 'FB 與 IG 今年各月加總（粉絲、追蹤者數為最新值），右側小圖是每月趨勢'
-    : `FB 與 IG 最新月份（${latest}），括號為與前一個月相比`;
-  box.innerHTML = `<div class="social-grid">${SOCIAL_PLATFORMS.map(p => platformHtml(p, socialRows)).join('')}</div>`;
+    ? 'FB、IG、YouTube 今年各月加總（粉絲、追蹤者數為最新值），右側小圖是每月趨勢'
+    : `FB、IG、YouTube 最新月份（${latest}），括號為與前一個月相比`;
+  box.innerHTML = `<div class="social-grid">${SOCIAL_PLATFORMS.map(p => platformHtml(p, p.source === 'youtube' ? ytRows : socialRows)).join('')}</div>`;
 }
 
 async function loadSocial() {
@@ -661,59 +662,17 @@ async function loadSocial() {
       return;
     }
     socialRows = rows;
+    try {
+      ytRows = parseCSV(await fetchText(SOURCES.youtubeMonthly))
+        .filter(r => /^\d{4}-\d{2}$/.test(r['月份']))
+        .sort((a, b) => a['月份'].localeCompare(b['月份']))
+        .map(r => ({ ...r, '觀看時數': Number.isFinite(num(r['觀看分鐘數'])) ? num(r['觀看分鐘數']) / 60 : '' }));
+    } catch (e) {
+      ytRows = [];
+    }
     renderSocial();
   } catch (err) {
     box.innerHTML = `<p class="state error">社群數據讀取失敗：${esc(err.message)}。請確認社群數據的 Sheets 仍為發布到網路的狀態。</p>`;
-  }
-}
-
-// ============================================================
-// 區塊：YouTube 頻道年度數據（n8n 每月寫入 YouTube月報）
-// ============================================================
-async function loadYtStats() {
-  const box = document.getElementById('yt-stats');
-  try {
-    const all = parseCSV(await fetchText(SOURCES.youtubeMonthly))
-      .filter(r => /^\d{4}-\d{2}$/.test(r['月份']))
-      .sort((a, b) => a['月份'].localeCompare(b['月份']));
-    if (all.length === 0) {
-      box.innerHTML = '<p class="state">還沒有 YouTube 月報資料。</p>';
-      return;
-    }
-    const year = all[all.length - 1]['月份'].slice(0, 4);
-    const rows = all.filter(r => r['月份'].startsWith(year));
-    const sum = col => rows.reduce((t, r) => t + (Number.isFinite(num(r[col])) ? num(r[col]) : 0), 0);
-    const hasImpressions = rows.some(r => Number.isFinite(num(r['曝光次數'])));
-    const firstM = +rows[0]['月份'].slice(5), lastM = +rows[rows.length - 1]['月份'].slice(5);
-    document.getElementById('yt-note').textContent =
-      `${year} 年 ${firstM === lastM ? firstM : `${firstM} 至 ${lastM}`} 月累計，以及最新上架的三支影片`;
-
-    const kpis = [
-      hasImpressions ? { label: '曝光次數', value: fmtNum(sum('曝光次數')) } : null,
-      { label: '觀看次數', value: fmtNum(sum('觀看次數')) },
-      { label: '觀看時數', value: fmtNum(Math.round(sum('觀看分鐘數') / 60)), unit: '小時' },
-      { label: '新增訂閱', value: fmtNum(sum('新增訂閱')) },
-    ].filter(Boolean);
-    const views = rows.map(r => ({ month: +r['月份'].slice(5), n: num(r['觀看次數']) || 0 }));
-    const maxV = Math.max(1, ...views.map(v => v.n));
-
-    box.innerHTML = `
-      <div class="yt-kpis">
-        ${kpis.map(k => `<div class="yt-kpi"><div class="num">${k.value}${k.unit ? `<small>${k.unit}</small>` : ''}</div><div class="lbl">${k.label}</div></div>`).join('')}
-      </div>
-      <div>
-        <p class="sub-h">每月觀看次數</p>
-        <div class="month-bars" role="img" aria-label="${views.map(v => `${v.month} 月 ${v.n} 次`).join('、')}">
-          ${views.map(v => `
-            <div class="month-bar">
-              <span class="mb-num">${fmtNum(v.n)}</span>
-              <span class="mb-col"><span style="height:${(v.n / maxV) * 100}%"></span></span>
-              <span class="mb-label">${v.month}月</span>
-            </div>`).join('')}
-        </div>
-      </div>`;
-  } catch (err) {
-    box.innerHTML = `<p class="state error">YouTube 月報讀取失敗：${esc(err.message)}。請確認「YouTube月報」分頁仍為發布到網路的狀態。</p>`;
   }
 }
 
@@ -844,7 +803,7 @@ async function loadReport() {
 async function loadAll() {
   const btn = document.getElementById('refresh');
   btn.disabled = true;
-  await Promise.allSettled([loadSensitive(), loadHeat(), loadSocial(), loadYtStats(), loadVideos(), loadReport()]);
+  await Promise.allSettled([loadSensitive(), loadHeat(), loadSocial(), loadVideos(), loadReport()]);
   const now = new Date();
   document.getElementById('updated').textContent =
     `更新於 ${now.getMonth() + 1}/${now.getDate()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
