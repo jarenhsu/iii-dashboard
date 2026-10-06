@@ -138,14 +138,17 @@
   .heat-count span { font-size: 0.8rem; color: var(--muted); }
 
   /* ---------- 社群月度 ---------- */
-  .social-grid { display: grid; gap: 1.2rem; }
-  .platform { border-left: 5px solid var(--ink); padding: 0.2rem 0 0.2rem 1rem; }
-  .platform.fb { border-left-color: var(--fb); }
-  .platform.ig { border-left-color: var(--ig); }
-  .platform.th { border-left-color: var(--th); }
-  .platform.yt { border-left-color: var(--yt); }
-  .platform h3 .dot-p { display: inline-block; width: 0.6rem; height: 0.6rem; border-radius: 50%; margin-right: 0.45rem; vertical-align: middle; }
-  .platform h3 { margin: 0 0 0.4rem; font-size: 1.05rem; color: var(--ink); }
+  .social-grid { display: grid; gap: 1rem; }
+  /* 平台卡片：底色用各平台代表色，文字一律白色 */
+  .platform { border-radius: 12px; padding: 1.1rem 1.3rem 1.2rem; color: #fff; }
+  .platform.fb { background: var(--fb); }
+  .platform.ig { background: linear-gradient(135deg, #f58529 0%, #dd2a7b 45%, #8134af 78%, #515bd4 100%); }
+  .platform.th { background: var(--th); }
+  .platform.yt { background: #e60000; }
+  .platform h3 { margin: 0 0 0.4rem; font-size: 1.05rem; color: #fff; }
+  .platform .big-label, .platform .metrics, .platform .state { color: rgba(255,255,255,0.85); }
+  .platform .metric b { color: #fff; }
+  .platform .chg, .platform .chg.up, .platform .chg.down { color: #fff; }
   .platform-main { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 0.5rem 1rem; }
   .social-grid > * { min-width: 0; }
   .big-num { font-size: 2.2rem; font-weight: 900; line-height: 1.1; font-variant-numeric: tabular-nums; }
@@ -248,7 +251,7 @@
           <button type="button" class="period-btn social-btn" data-mode="month" aria-pressed="false">當月</button>
         </div>
       </div>
-      <div class="panel" id="social"><p class="state">載入中</p></div>
+      <div id="social"><p class="state">載入中</p></div>
     </section>
   </div>
 
@@ -595,7 +598,7 @@ let socialMode = 'year';
 
 function platformHtml(p, rows) {
   const valid = rows.filter(r => Number.isFinite(num(r[p.main.col])));
-  if (valid.length === 0) return `<div class="platform ${p.cls}"><h3><i class="dot-p" style="background:${p.color}"></i>${p.name}</h3><p class="state">尚無資料</p></div>`;
+  if (valid.length === 0) return `<div class="platform ${p.cls}"><h3>${p.name}</h3><p class="state">尚無資料</p></div>`;
   const series = rows.map(r => num(r[p.main.col]));
 
   if (socialMode === 'year') {
@@ -613,13 +616,13 @@ function platformHtml(p, rows) {
     };
     return `
       <div class="platform ${p.cls}">
-        <h3><i class="dot-p" style="background:${p.color}"></i>${p.name}　${year} 年 ${firstM === lastM ? firstM : `${firstM} 至 ${lastM}`} 月累計</h3>
+        <h3>${p.name}　${year} 年 ${firstM === lastM ? firstM : `${firstM} 至 ${lastM}`} 月累計</h3>
         <div class="platform-main">
           <div>
             <div class="big-num">${fmtNum(yearValue(p.main.col))}</div>
             <div class="big-label">${p.main.label}</div>
           </div>
-          ${sparkline(yr.map(r => num(r[p.main.col])), p.color)}
+          ${sparkline(yr.map(r => num(r[p.main.col])), '#ffffff')}
         </div>
         <div class="metrics">${p.others.map(metric).join('')}</div>
       </div>`;
@@ -634,13 +637,13 @@ function platformHtml(p, rows) {
   };
   return `
     <div class="platform ${p.cls}">
-      <h3><i class="dot-p" style="background:${p.color}"></i>${p.name}　${esc(cur['月份'])}</h3>
+      <h3>${p.name}　${esc(cur['月份'])}</h3>
       <div class="platform-main">
         <div>
           <div class="big-num">${fmtNum(num(cur[p.main.col]))}${prev ? changeHtml(num(cur[p.main.col]), num(prev[p.main.col])) : ''}</div>
           <div class="big-label">${p.main.label}</div>
         </div>
-        ${sparkline(series, p.color)}
+        ${sparkline(series, '#ffffff')}
       </div>
       <div class="metrics">${p.others.map(metric).join('')}</div>
     </div>`;
