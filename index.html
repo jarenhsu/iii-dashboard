@@ -10,20 +10,22 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
   :root {
-    --forest: #1f3a2e;
-    --forest-2: #2c4f3e;
-    --moss: #4e7a55;
-    --leaf: #e7eee6;
-    --paper: #f3f5f1;
-    --ink: #1c241f;
-    --muted: #5d6b62;
-    --line: #d5ddd4;
-    --gold: #b8860b;
-    --lv-superhigh: #b3261e;
-    --lv-high: #c8640a;
-    --lv-medium: #9a7400;
-    --up: #2e7d32;
-    --down: #b3261e;
+    --black: #0e0e0e;
+    --black-2: #1b1b1b;
+    --ink: #141414;
+    --paper: #f4f4f2;
+    --track: #ebebeb;
+    --muted: #6b6b6b;
+    --line: #e2e2e2;
+    --accent: #f04e23;
+    --lv-superhigh: #f04e23;
+    --lv-high: #141414;
+    --lv-medium: #8a8a8a;
+    --up: #141414;
+    --down: #f04e23;
+    --fb: #1877f2;
+    --ig: #e1306c;
+    --yt: #ff0000;
   }
   * { box-sizing: border-box; }
   html { font-size: 18px; }
@@ -35,46 +37,46 @@
     line-height: 1.6;
   }
   a { color: inherit; }
-  a:focus-visible, button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+  a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
   /* ---------- 頁首 ---------- */
   .topbar {
     display: flex; align-items: center; justify-content: space-between; gap: 1rem;
     padding: 0.9rem clamp(1rem, 4vw, 2.5rem);
-    background: var(--forest); color: #fff;
+    background: var(--black); color: #fff;
   }
   .topbar h1 { margin: 0; font-size: 1.15rem; font-weight: 700; letter-spacing: 0.04em; white-space: nowrap; }
-  .topbar .meta { display: flex; align-items: center; gap: 0.8rem; font-size: 0.85rem; color: #c9d8cc; }
+  .topbar .meta { display: flex; align-items: center; gap: 0.8rem; font-size: 0.85rem; color: #b5b5b5; }
   .topbar button {
     font: inherit; font-size: 0.85rem; color: #fff; background: transparent;
-    border: 1px solid #6f9078; border-radius: 6px; padding: 0.3rem 0.8rem; cursor: pointer; white-space: nowrap;
+    border: 1px solid #555; border-radius: 6px; padding: 0.3rem 0.8rem; cursor: pointer; white-space: nowrap;
   }
   @media (max-width: 560px) {
     .topbar #updated { display: none; }
     .spark { width: 110px; }
   }
-  .topbar button:hover { background: var(--forest-2); }
+  .topbar button:hover { background: var(--black-2); }
 
   /* ---------- 敏感新聞快報 ---------- */
   .alert-band {
-    background: var(--forest-2); color: #fff;
+    background: var(--black-2); color: #fff;
     padding: 1.6rem clamp(1rem, 4vw, 2.5rem) 1.4rem;
-    border-bottom: 6px solid var(--gold);
+    border-bottom: 6px solid var(--accent);
   }
   .alert-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.4rem 1.2rem; }
   .alert-count { font-size: clamp(2rem, 5vw, 2.8rem); font-weight: 900; line-height: 1.1; }
-  .alert-count.calm { color: #cfe3d2; }
-  .alert-sub { font-size: 1rem; color: #c9d8cc; }
+  .alert-count.calm { color: #e6e6e6; }
+  .alert-sub { font-size: 1rem; color: #b5b5b5; }
   .alert-levels { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-left: auto; }
   .lv-chip {
     font-size: 0.85rem; font-weight: 700; padding: 0.15rem 0.7rem; border-radius: 999px;
-    background: rgba(255,255,255,0.12); color: #fff;
+    background: rgba(255,255,255,0.1); color: #fff;
   }
   .lv-chip b { font-size: 1rem; margin-left: 0.3rem; }
 
   .ticker {
     margin-top: 1.1rem; overflow: hidden; position: relative;
-    background: rgba(0,0,0,0.18); border-radius: 8px;
+    background: rgba(255,255,255,0.06); border-radius: 8px;
     mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent);
   }
   .ticker-track { display: inline-flex; gap: 2.5rem; padding: 0.85rem 0; white-space: nowrap; animation: scroll var(--dur, 60s) linear infinite; }
@@ -83,10 +85,11 @@
   .tick-item { display: inline-flex; align-items: center; gap: 0.6rem; text-decoration: none; font-size: 1.05rem; }
   .tick-item:hover .tick-title { text-decoration: underline; }
   .tick-lv { font-size: 0.8rem; font-weight: 700; padding: 0.1rem 0.55rem; border-radius: 4px; color: #fff; }
-  .tick-date { font-size: 0.85rem; color: #b8cbbd; }
+  .tick-date { font-size: 0.85rem; color: #9a9a9a; }
   .lv-superHigh { background: var(--lv-superhigh); }
-  .lv-high { background: var(--lv-high); }
+  .lv-high { background: var(--lv-high); box-shadow: inset 0 0 0 1px #fff; }
   .lv-medium { background: var(--lv-medium); }
+  .lv-chip.chip-superHigh { background: var(--accent); }
 
   .alert-list { list-style: none; margin: 1rem 0 0; padding: 0; display: none; }
   .alert-list li { padding: 0.5rem 0; border-top: 1px solid rgba(255,255,255,0.15); }
@@ -102,7 +105,7 @@
   .row > section, .report-grid > div { min-width: 0; }
   @media (max-width: 900px) { .row { grid-template-columns: minmax(0, 1fr); } }
   section h2 {
-    font-size: 1.3rem; font-weight: 900; margin: 0 0 0.2rem; color: var(--forest);
+    font-size: 1.3rem; font-weight: 900; margin: 0 0 0.2rem; color: var(--ink);
   }
   .section-note { font-size: 0.85rem; color: var(--muted); margin: 0 0 1rem; }
   .panel { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 1.3rem 1.4rem; }
@@ -113,7 +116,7 @@
   .section-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
   .period-switch { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #fff; }
   .period-btn { font: inherit; font-size: 0.85rem; padding: 0.25rem 0.8rem; border: none; background: transparent; color: var(--muted); cursor: pointer; }
-  .period-btn[aria-pressed="true"] { background: var(--forest); color: #fff; font-weight: 700; }
+  .period-btn[aria-pressed="true"] { background: var(--ink); color: #fff; font-weight: 700; }
   .heat-list { list-style: none; margin: 0; padding: 0; counter-reset: rank; }
   .heat-item {
     display: grid; grid-template-columns: 2.6rem minmax(0, 1fr) auto; gap: 0.2rem 0.9rem; align-items: start;
@@ -121,20 +124,22 @@
   }
   .heat-item:first-child { border-top: none; padding-top: 0.2rem; }
   .heat-rank { font-size: 1.6rem; font-weight: 900; color: var(--muted); line-height: 1.2; text-align: center; }
-  .heat-item:nth-child(-n+3) .heat-rank { color: var(--gold); }
+  .heat-item:nth-child(-n+3) .heat-rank { color: var(--accent); }
   .heat-title { font-size: 1.05rem; font-weight: 700; text-decoration: none; line-height: 1.45; }
   .heat-title:hover { text-decoration: underline; }
   .heat-media { grid-column: 2; font-size: 0.85rem; color: var(--muted); }
   .heat-count { text-align: right; white-space: nowrap; }
-  .heat-count b { display: block; font-size: 1.5rem; font-weight: 900; line-height: 1.1; color: var(--forest); }
+  .heat-count b { display: block; font-size: 1.5rem; font-weight: 900; line-height: 1.1; color: var(--ink); }
   .heat-count span { font-size: 0.8rem; color: var(--muted); }
 
   /* ---------- 社群月度 ---------- */
   .social-grid { display: grid; gap: 1.2rem; }
-  .platform { border-left: 5px solid var(--moss); padding: 0.2rem 0 0.2rem 1rem; }
-  .platform.ig { border-left-color: var(--gold); }
-  .platform.yt { border-left-color: #a0522d; }
-  .platform h3 { margin: 0 0 0.4rem; font-size: 1.05rem; color: var(--forest); }
+  .platform { border-left: 5px solid var(--ink); padding: 0.2rem 0 0.2rem 1rem; }
+  .platform.fb { border-left-color: var(--fb); }
+  .platform.ig { border-left-color: var(--ig); }
+  .platform.yt { border-left-color: var(--yt); }
+  .platform h3 .dot-p { display: inline-block; width: 0.6rem; height: 0.6rem; border-radius: 50%; margin-right: 0.45rem; vertical-align: middle; }
+  .platform h3 { margin: 0 0 0.4rem; font-size: 1.05rem; color: var(--ink); }
   .platform-main { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 0.5rem 1rem; }
   .social-grid > * { min-width: 0; }
   .big-num { font-size: 2.2rem; font-weight: 900; line-height: 1.1; font-variant-numeric: tabular-nums; }
@@ -148,17 +153,17 @@
 
   /* ---------- YouTube ---------- */
   .videos { margin-top: 2.2rem; }
-  .channel-link { font-size: 0.9rem; font-weight: 700; color: var(--moss); }
+  .channel-link { font-size: 0.9rem; font-weight: 700; color: var(--accent); }
   .video-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.4rem; }
   @media (max-width: 900px) { .video-grid { grid-template-columns: minmax(0, 1fr); } }
   .video-card { display: block; text-decoration: none; background: #fff; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
-  .video-card:hover { border-color: var(--moss); }
+  .video-card:hover { border-color: var(--accent); }
   .video-card:hover .video-title { text-decoration: underline; }
-  .thumb { position: relative; aspect-ratio: 16 / 9; background: var(--forest-2); }
+  .thumb { position: relative; aspect-ratio: 16 / 9; background: var(--black-2); }
   .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .play {
     position: absolute; right: 0.7rem; bottom: 0.7rem; width: 2.6rem; height: 2.6rem; border-radius: 50%;
-    background: rgba(31,58,46,0.85); display: grid; place-items: center;
+    background: var(--accent); display: grid; place-items: center;
   }
   .play::after { content: ""; border-left: 0.75rem solid #fff; border-top: 0.45rem solid transparent; border-bottom: 0.45rem solid transparent; margin-left: 0.2rem; }
   .video-body { padding: 0.8rem 1rem 1rem; }
@@ -172,18 +177,18 @@
   .report { margin-top: 2.2rem; }
   .report-grid { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 1.8rem; }
   @media (max-width: 1000px) { .report-grid { grid-template-columns: minmax(0, 1fr); } }
-  .report-total { font-size: 3rem; font-weight: 900; line-height: 1; color: var(--forest); font-variant-numeric: tabular-nums; }
+  .report-total { font-size: 3rem; font-weight: 900; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
   .report-total small { font-size: 1rem; font-weight: 500; color: var(--muted); margin-left: 0.3rem; }
   .senti-bar { display: flex; height: 14px; border-radius: 7px; overflow: hidden; margin: 1rem 0 0.6rem; background: var(--line); }
   .senti-bar span { display: block; height: 100%; }
   .senti-legend { display: flex; flex-wrap: wrap; gap: 0.3rem 1.1rem; font-size: 0.9rem; }
   .dot { display: inline-block; width: 0.7rem; height: 0.7rem; border-radius: 50%; margin-right: 0.35rem; vertical-align: middle; }
-  .sub-h { font-size: 0.95rem; font-weight: 700; color: var(--forest); margin: 0 0 0.6rem; }
+  .sub-h { font-size: 0.95rem; font-weight: 700; color: var(--ink); margin: 0 0 0.6rem; }
   .media-list { list-style: none; margin: 0; padding: 0; font-size: 0.95rem; }
   .media-list li { display: flex; justify-content: space-between; padding: 0.35rem 0; border-top: 1px dashed var(--line); }
   .media-list li:first-child { border-top: none; }
   .dept-row { display: grid; grid-template-columns: 6.5rem 1fr 2.6rem; gap: 0.6rem; align-items: center; font-size: 0.9rem; margin-bottom: 0.45rem; }
-  .dept-bar { height: 12px; border-radius: 6px; background: var(--leaf); overflow: hidden; }
+  .dept-bar { height: 12px; border-radius: 6px; background: var(--track); overflow: hidden; }
   .dept-bar span { display: block; height: 100%; }
   .dept-row b { text-align: right; font-variant-numeric: tabular-nums; }
   .month-h { margin-top: 1.4rem; }
@@ -191,9 +196,9 @@
   .month-bar { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; min-width: 0; }
   .mb-num { font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums; }
   .mb-col { flex: 1; width: 100%; max-width: 34px; display: flex; align-items: flex-end; }
-  .mb-col span { display: block; width: 100%; background: var(--moss); border-radius: 4px 4px 0 0; min-height: 2px; }
+  .mb-col span { display: block; width: 100%; background: var(--ink); border-radius: 4px 4px 0 0; min-height: 2px; }
   .mb-label { font-size: 0.8rem; color: var(--ink); margin-top: 0.2rem; }
-  .more-link { display: inline-block; margin-top: 1rem; font-size: 0.9rem; font-weight: 700; color: var(--moss); }
+  .more-link { display: inline-block; margin-top: 1rem; font-size: 0.9rem; font-weight: 700; color: var(--accent); }
 
   footer { font-size: 0.8rem; color: var(--muted); text-align: center; padding: 0 1rem 2rem; }
 </style>
@@ -388,7 +393,7 @@ async function loadSensitive() {
     subEl.textContent = '滑鼠移到跑馬燈上可暫停，點標題開啟新聞';
     levelsEl.innerHTML = Object.entries(LEVELS).map(([label, lv]) => {
       const n = items.filter(i => i.level.key === lv.key).length;
-      return n ? `<span class="lv-chip">${label}<b>${n}</b></span>` : '';
+      return n ? `<span class="lv-chip chip-${lv.key}">${label}<b>${n}</b></span>` : '';
     }).join('');
 
     const itemHtml = i => `
@@ -554,7 +559,7 @@ function sparkline(values, color) {
 const SOCIAL_STOCK_COLS = ['FB粉絲總數', 'IG追蹤者數'];
 const SOCIAL_PLATFORMS = [
   {
-    name: 'Facebook', cls: 'fb', color: '#4e7a55', source: 'meta',
+    name: 'Facebook', cls: 'fb', color: '#1877f2', source: 'meta',
     main: { col: 'FB觸及人數', label: '觸及人數' },
     others: [
       { col: 'FB貼文互動', label: '貼文互動' },
@@ -565,7 +570,7 @@ const SOCIAL_PLATFORMS = [
     ],
   },
   {
-    name: 'Instagram', cls: 'ig', color: '#b8860b', source: 'meta',
+    name: 'Instagram', cls: 'ig', color: '#e1306c', source: 'meta',
     main: { col: 'IG瀏覽次數', label: '瀏覽次數' },
     others: [
       { col: 'IG觸及帳號', label: '觸及帳號' },
@@ -574,7 +579,7 @@ const SOCIAL_PLATFORMS = [
     ],
   },
   {
-    name: 'YouTube', cls: 'yt', color: '#a0522d', source: 'youtube',
+    name: 'YouTube', cls: 'yt', color: '#ff0000', source: 'youtube',
     main: { col: '觀看次數', label: '觀看次數' },
     others: [
       { col: '曝光次數', label: '曝光次數' },
@@ -589,7 +594,7 @@ let socialMode = 'year';
 
 function platformHtml(p, rows) {
   const valid = rows.filter(r => Number.isFinite(num(r[p.main.col])));
-  if (valid.length === 0) return `<div class="platform ${p.cls}"><h3>${p.name}</h3><p class="state">尚無資料</p></div>`;
+  if (valid.length === 0) return `<div class="platform ${p.cls}"><h3><i class="dot-p" style="background:${p.color}"></i>${p.name}</h3><p class="state">尚無資料</p></div>`;
   const series = rows.map(r => num(r[p.main.col]));
 
   if (socialMode === 'year') {
@@ -607,7 +612,7 @@ function platformHtml(p, rows) {
     };
     return `
       <div class="platform ${p.cls}">
-        <h3>${p.name}　${year} 年 ${firstM === lastM ? firstM : `${firstM} 至 ${lastM}`} 月累計</h3>
+        <h3><i class="dot-p" style="background:${p.color}"></i>${p.name}　${year} 年 ${firstM === lastM ? firstM : `${firstM} 至 ${lastM}`} 月累計</h3>
         <div class="platform-main">
           <div>
             <div class="big-num">${fmtNum(yearValue(p.main.col))}</div>
@@ -628,7 +633,7 @@ function platformHtml(p, rows) {
   };
   return `
     <div class="platform ${p.cls}">
-      <h3>${p.name}　${esc(cur['月份'])}</h3>
+      <h3><i class="dot-p" style="background:${p.color}"></i>${p.name}　${esc(cur['月份'])}</h3>
       <div class="platform-main">
         <div>
           <div class="big-num">${fmtNum(num(cur[p.main.col]))}${prev ? changeHtml(num(cur[p.main.col]), num(prev[p.main.col])) : ''}</div>
@@ -745,9 +750,9 @@ async function loadReport() {
     document.getElementById('report-note').textContent = `${rangeLabel}累計，資料來自 iii-newsroom，新增月份後會自動納入`;
 
     const senti = [
-      { label: '正面', n: positive, color: '#4e7a55' },
-      { label: '中立', n: neutral, color: '#a9b8ad' },
-      { label: '負面', n: negative, color: '#b3261e' },
+      { label: '正面', n: positive, color: '#141414' },
+      { label: '中立', n: neutral, color: '#c9c9c9' },
+      { label: '負面', n: negative, color: '#f04e23' },
     ];
     const pct = n => (total ? (n / total) * 100 : 0);
     // topMedia 每月只列前幾名，加總後是「各月排行榜上」的累計，作為年度參考
@@ -784,10 +789,10 @@ async function loadReport() {
       </div>
       <div>
         <p class="sub-h">各單位露出</p>
-        ${depts.map(x => `
+        ${depts.map((x, di) => `
           <div class="dept-row">
             <span>${esc(x.short || x.name)}</span>
-            <span class="dept-bar"><span style="width:${(x.total / maxDept) * 100}%;background:${esc(x.color || '#4e7a55')}"></span></span>
+            <span class="dept-bar"><span style="width:${(x.total / maxDept) * 100}%;background:${di === 0 ? 'var(--accent)' : 'var(--ink)'}"></span></span>
             <b>${fmtNum(x.total)}</b>
           </div>`).join('')}
       </div>
