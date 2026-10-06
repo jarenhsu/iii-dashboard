@@ -25,6 +25,7 @@
     --down: #f04e23;
     --fb: #1877f2;
     --ig: #e1306c;
+    --th: #000000;
     --yt: #ff0000;
   }
   * { box-sizing: border-box; }
@@ -137,6 +138,7 @@
   .platform { border-left: 5px solid var(--ink); padding: 0.2rem 0 0.2rem 1rem; }
   .platform.fb { border-left-color: var(--fb); }
   .platform.ig { border-left-color: var(--ig); }
+  .platform.th { border-left-color: var(--th); }
   .platform.yt { border-left-color: var(--yt); }
   .platform h3 .dot-p { display: inline-block; width: 0.6rem; height: 0.6rem; border-radius: 50%; margin-right: 0.45rem; vertical-align: middle; }
   .platform h3 { margin: 0 0 0.4rem; font-size: 1.05rem; color: var(--ink); }
@@ -556,7 +558,7 @@ function sparkline(values, color) {
   </svg>`;
 }
 // 存量型欄位（粉絲數、追蹤者數）年度模式取最新值，不加總
-const SOCIAL_STOCK_COLS = ['FB粉絲總數', 'IG追蹤者數'];
+const SOCIAL_STOCK_COLS = ['FB粉絲總數', 'IG追蹤者數', 'TH粉絲數'];
 const SOCIAL_PLATFORMS = [
   {
     name: 'Facebook', cls: 'fb', color: '#1877f2', source: 'meta',
@@ -576,6 +578,17 @@ const SOCIAL_PLATFORMS = [
       { col: 'IG觸及帳號', label: '觸及帳號' },
       { col: 'IG互動次數', label: '互動次數' },
       { col: 'IG追蹤者數', label: '追蹤者數' },
+    ],
+  },
+  {
+    name: 'Threads', cls: 'th', color: '#000000', source: 'meta',
+    main: { col: 'TH瀏覽次數', label: '瀏覽次數' },
+    others: [
+      { col: 'TH互動次數', label: '互動次數' },
+      { col: 'TH按讚', label: '按讚' },
+      { col: 'TH回覆', label: '回覆' },
+      { col: 'TH轉發引用', label: '轉發引用' },
+      { col: 'TH粉絲數', label: '粉絲數' },
     ],
   },
   {
@@ -651,8 +664,8 @@ function renderSocial() {
   if (!socialRows) return;
   const latest = socialRows[socialRows.length - 1]['月份'];
   document.getElementById('social-note').textContent = socialMode === 'year'
-    ? 'FB、IG、YouTube 今年各月加總（粉絲、追蹤者數為最新值），右側小圖是每月趨勢'
-    : `FB、IG、YouTube 最新月份（${latest}），括號為與前一個月相比`;
+    ? 'FB、IG、Threads、YouTube 今年各月加總（粉絲、追蹤者數為最新值），右側小圖是每月趨勢'
+    : `FB、IG、Threads、YouTube 最新月份（${latest}），括號為與前一個月相比`;
   box.innerHTML = `<div class="social-grid">${SOCIAL_PLATFORMS.map(p => platformHtml(p, p.source === 'youtube' ? ytRows : socialRows)).join('')}</div>`;
 }
 
